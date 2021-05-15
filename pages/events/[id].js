@@ -1,20 +1,18 @@
 import { useRouter } from "next/router"
 import { Fragment } from "react"
-import { getEventById } from "../../dummy-data"
+import { getAllEvents, getEventById } from "../../heplers/api-util"
 import EventSummary from '../../components/event-detail/event-summary'
 import EventLogistic from '../../components/event-detail/event-logistics'
 import EventContent from '../../components/event-detail/event-content'
 
 
-function EventDetailPage () {
-    const router = useRouter()
-    
-    const event = getEventById(router.query.id)
+function EventDetailPage (props) {
+    const event = props.event
 
     if (!event) {
         return <p>No event found!</p>
     }
-    console.log(event)
+    
     return (
         <Fragment>
             <EventSummary title={event.title} />
@@ -29,3 +27,27 @@ function EventDetailPage () {
 }
 
 export default EventDetailPage
+
+export async function getStaticProps (context) {
+    const { params } = context
+    const eventId = params.id
+    const event = await getEventById(eventId)
+
+    if (!event) return { notFound: true }
+
+    return {
+        props: {
+            event
+        }
+    }
+}
+
+export async function getStaticPaths () {
+    const events = await getAllEvents();
+    const paths = events.map(event => ({ params: { id: event.id }}))
+
+    return {
+        paths: paths,
+        fallback: 'blocking'
+    }
+}
